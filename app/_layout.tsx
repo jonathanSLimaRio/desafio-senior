@@ -12,6 +12,7 @@ import "react-native-reanimated";
 import { NativeBaseProvider } from "native-base";
 
 import { useColorScheme } from "@/components/useColorScheme";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -54,13 +55,21 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <NativeBaseProvider>
-        <Stack>
-          <Stack.Screen name="(home)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-        </Stack>
-      </NativeBaseProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <NativeBaseProvider>
+          <Stack>
+            <Stack.Screen name="(home)" options={{ headerShown: false }} />
+            <Stack.Screen name="(home)/game" options={{ headerShown: false }} />
+            <Stack.Screen name="(home)/over" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="(home)/record.tsx"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+          </Stack>
+        </NativeBaseProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -48,10 +48,26 @@ export default function TabLayout() {
           ),
         }}
       />
+       <Tabs.Screen
+        name="game"
+        options={{
+          title: 'Game',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="record"
         options={{
           title: 'Meus Records',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="over"
+        options={{
+          title: 'Game Over',
           headerShown: false,
           tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
         }}

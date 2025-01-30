@@ -1,14 +1,27 @@
-import { StyleSheet } from 'react-native';
+import React from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { useRouter } from "expo-router";
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function HomeScreen() {
+  const router = useRouter();
 
-export default function TabOneScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      <Text style={styles.title}>Tetris</Text>
+
+      <Pressable
+        style={styles.button}
+        onPress={() => router.push(`/(home)/game`)}
+      >
+        <Text style={styles.buttonText}>Iniciar Jogo</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.button}
+        onPress={() => router.push(`/(home)/record`)}
+      >
+        <Text style={styles.buttonText}>Ver Recordes</Text>
+      </Pressable>
     </View>
   );
 }
@@ -16,16 +29,25 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 48,
+    color: "#fff",
+    marginBottom: 40,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  button: {
+    backgroundColor: "#4a90e2",
+    padding: 15,
+    borderRadius: 8,
+    marginVertical: 10,
+    width: 200,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 18,
   },
 });
