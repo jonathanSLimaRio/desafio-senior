@@ -63,7 +63,7 @@ function RootLayoutNav() {
             <Stack.Screen name="(home)/game" options={{ headerShown: false }} />
             <Stack.Screen name="(home)/over" options={{ headerShown: false }} />
             <Stack.Screen
-              name="(home)/record.tsx"
+              name="(home)/record"
               options={{ headerShown: false }}
             />
             <Stack.Screen name="modal" options={{ presentation: "modal" }} />

@@ -25,7 +25,6 @@ import {
 import NextPiecePreview from "@/components/NextPiecePreview";
 import { useRouter, useFocusEffect } from "expo-router";
 import LevelIndicator from "@/components/LevelIndicator";
-import { playClearSound, playGameOverSound } from "@/app/utils/sounds";
 
 export default function GameScreen() {
   const router = useRouter();
@@ -112,7 +111,7 @@ export default function GameScreen() {
         const { newGrid, linesCleared } = clearLines(mergedGrid);
 
         if (linesCleared > 0) {
-          playClearSound();
+          // playClearSound();
           const newScore = score + calculateScore(linesCleared, level);
           setScore(newScore);
 
@@ -139,7 +138,7 @@ export default function GameScreen() {
         setNextPiece(newNextPiece);
 
         if (checkCollision(newGrid, newPiece.shape, { x: 3, y: 0 })) {
-          playGameOverSound();
+          // playGameOverSound();
           saveLastScore(score);
           setIsGameActive(false);
           router.push({
