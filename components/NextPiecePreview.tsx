@@ -1,30 +1,15 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
 import { Tetromino } from "@/app/utils/gameLogic";
 
 interface Props {
   piece: Tetromino;
   blockSize: number;
-  currentRotation: number;
 }
 
-export default function NextPiecePreview({
-  piece,
-  blockSize,
-  currentRotation,
-}: Props) {
-  const AnimatedView = Animated.createAnimatedComponent(View);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: withSpring(`${currentRotation * 90}deg`) }],
-  }));
-
+export default function NextPiecePreview({ piece, blockSize }: Props) {
   return (
-    <AnimatedView style={[styles.container, animatedStyle]}>
+    <View style={styles.container}>
       {piece.shape.map((row, y) => (
         <View key={y} style={styles.row}>
           {row.map((cell, x) => (
@@ -42,7 +27,7 @@ export default function NextPiecePreview({
           ))}
         </View>
       ))}
-    </AnimatedView>
+    </View>
   );
 }
 

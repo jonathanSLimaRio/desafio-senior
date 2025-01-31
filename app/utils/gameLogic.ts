@@ -1,6 +1,4 @@
-// utils/gameLogic.ts
-
-export type TetrominoShape = number[][]; // Cada célula = 1 ou 0
+export type TetrominoShape = number[][];
 export type Position = { x: number; y: number };
 
 export interface Tetromino {
@@ -12,7 +10,6 @@ export interface Tetromino {
 export const COLS = 10;
 export const ROWS = 20;
 
-// Mapeamento de cores (se quiser mudar)
 export const TETROMINO_COLORS: { [key: string]: string } = {
   I: "#00FFFF",
   O: "#FFFF00",
@@ -23,7 +20,6 @@ export const TETROMINO_COLORS: { [key: string]: string } = {
   L: "#FFA500",
 };
 
-// Definições de Tetrominos + rotações
 export const TETROMINOES: { [key: string]: Tetromino } = {
   I: {
     shape: [[1, 1, 1, 1]],
@@ -180,9 +176,6 @@ export const TETROMINOES: { [key: string]: Tetromino } = {
   },
 };
 
-/**
- * Verifica colisão da peça com a borda ou com células já ocupadas.
- */
 export const checkCollision = (
   grid: (number | string)[][],
   piece: TetrominoShape,
@@ -209,9 +202,6 @@ export const checkCollision = (
   return false;
 };
 
-/**
- * Mescla a peça atual ao grid.
- */
 export const mergePieceToGrid = (
   grid: (number | string)[][],
   piece: TetrominoShape,
@@ -233,9 +223,6 @@ export const mergePieceToGrid = (
   return newGrid;
 };
 
-/**
- * Gira a peça para a próxima rotação.
- */
 export const rotatePiece = (
   currentPiece: Tetromino,
   currentRotation: number
@@ -247,9 +234,6 @@ export const rotatePiece = (
   };
 };
 
-/**
- * Limpa as linhas completas e retorna o novo grid e quantas linhas foram removidas.
- */
 export const clearLines = (
   grid: (number | string)[][]
 ): { newGrid: (number | string)[][]; linesCleared: number } => {
@@ -257,7 +241,6 @@ export const clearLines = (
   let linesCleared = 0;
 
   for (let y = 0; y < grid.length; y++) {
-    // Se a linha não contém zeros, está completa
     if (grid[y].every((cell) => cell !== 0)) {
       linesCleared++;
     } else {
@@ -265,7 +248,6 @@ export const clearLines = (
     }
   }
 
-  // Adiciona linhas vazias no topo depois de remover
   while (newGrid.length < ROWS) {
     newGrid.unshift(Array(COLS).fill(0));
   }
@@ -273,18 +255,11 @@ export const clearLines = (
   return { newGrid, linesCleared };
 };
 
-/**
- * Calcula pontuação baseada em número de linhas e nível.
- * (Aqui deixamos fixo level=1 para simplificar.)
- */
 export const calculateScore = (lines: number, level: number): number => {
   const scoreValues = [0, 40, 100, 300, 1200];
   return scoreValues[lines] * level;
 };
 
-/**
- * Movimentos de translação
- */
 export const moveLeft = (position: Position): Position => ({
   x: position.x - 1,
   y: position.y,
@@ -300,9 +275,6 @@ export const moveDown = (position: Position): Position => ({
   y: position.y + 1,
 });
 
-/**
- * Hard drop: desce até colidir.
- */
 export const hardDrop = (
   grid: (number | string)[][],
   piece: TetrominoShape,
@@ -312,6 +284,6 @@ export const hardDrop = (
   while (!checkCollision(grid, piece, newPosition)) {
     newPosition.y++;
   }
-  // Volta uma linha para cima (pois colidiu)
+
   return { x: newPosition.x, y: newPosition.y - 1 };
 };

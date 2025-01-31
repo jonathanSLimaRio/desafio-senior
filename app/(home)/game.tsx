@@ -23,32 +23,62 @@ import {
   saveLastScore,
 } from "@/app/utils/storage";
 import NextPiecePreview from "@/components/NextPiecePreview";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import LevelIndicator from "@/components/LevelIndicator";
+import { playClearSound, playGameOverSound } from "@/app/utils/sounds";
 
 export default function GameScreen() {
   const router = useRouter();
   const { width } = Dimensions.get("window");
 
   const [isGameActive, setIsGameActive] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+
   const [currentPosition, setCurrentPosition] = useState({ x: 3, y: 0 });
-  const [currentPiece, setCurrentPiece] = useState(() => {
-    const keys = Object.keys(TETROMINOES);
-    return TETROMINOES[keys[Math.floor(Math.random() * keys.length)]];
-  });
+  const [currentPiece, setCurrentPiece] = useState(TETROMINOES.I);
   const [currentRotation, setCurrentRotation] = useState(0);
-  const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
-  const [nextPiece, setNextPiece] = useState(() => {
-    const keys = Object.keys(TETROMINOES);
-    return TETROMINOES[keys[Math.floor(Math.random() * keys.length)]];
-  });
+
   const [grid, setGrid] = useState(
     Array(ROWS)
       .fill(null)
       .map(() => Array(COLS).fill(0))
   );
+
+  const [nextPiece, setNextPiece] = useState(TETROMINOES.J);
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [linesClearedTotal, setLinesClearedTotal] = useState(0);
   const [gameSpeed, setGameSpeed] = useState(1000);
-  const [isPaused, setIsPaused] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const resetGame = async () => {
+        setCurrentPosition({ x: 3, y: 0 });
+        setGrid(
+          Array(ROWS)
+            .fill(null)
+            .map(() => Array(COLS).fill(0))
+        );
+        setScore(0);
+        setLevel(1);
+        setLinesClearedTotal(0);
+        setIsGameActive(true);
+        setIsPaused(false);
+
+        const keys = Object.keys(TETROMINOES);
+        setCurrentPiece(
+          TETROMINOES[keys[Math.floor(Math.random() * keys.length)]]
+        );
+        setNextPiece(
+          TETROMINOES[keys[Math.floor(Math.random() * keys.length)]]
+        );
+      };
+
+      resetGame();
+      return () => setIsGameActive(false);
+    }, [])
+  );
 
   useEffect(() => {
     const loadScores = async () => {
@@ -59,29 +89,39 @@ export default function GameScreen() {
   }, []);
 
   useEffect(() => {
+    const newSpeed = Math.max(1000 - (level - 1) * 100, 100);
+    setGameSpeed(newSpeed);
+  }, [level]);
+
+  useEffect(() => {
     if (!isGameActive || isPaused) return;
 
     const gameInterval = setInterval(() => {
       const newPosition = moveDown(currentPosition);
 
-      // Tenta mover para baixo
       if (!checkCollision(grid, currentPiece.shape, newPosition)) {
         setCurrentPosition(newPosition);
       } else {
-        // Merge da peça no grid
         const mergedGrid = mergePieceToGrid(
           grid,
           currentPiece.shape,
           currentPosition,
-          currentPiece.color as string
+          currentPiece.color
         );
 
-        // Limpeza de linhas
         const { newGrid, linesCleared } = clearLines(mergedGrid);
 
         if (linesCleared > 0) {
-          const newScore = score + calculateScore(linesCleared, 1);
+          playClearSound();
+          const newScore = score + calculateScore(linesCleared, level);
           setScore(newScore);
+
+          const updatedLinesClearedTotal = linesClearedTotal + linesCleared;
+          setLinesClearedTotal(updatedLinesClearedTotal);
+
+          if (updatedLinesClearedTotal >= level * 10) {
+            setLevel((prev) => prev + 1);
+          }
 
           if (newScore > highScore) {
             setHighScore(newScore);
@@ -92,28 +132,26 @@ export default function GameScreen() {
 
         setGrid(newGrid);
 
-        // Nova peça
+        const newPiece = nextPiece;
         const keys = Object.keys(TETROMINOES);
-        const newPiece =
+        const newNextPiece =
           TETROMINOES[keys[Math.floor(Math.random() * keys.length)]];
+        setNextPiece(newNextPiece);
 
-        // Verifica se a nova peça colide imediatamente (game over)
         if (checkCollision(newGrid, newPiece.shape, { x: 3, y: 0 })) {
+          playGameOverSound();
           saveLastScore(score);
           setIsGameActive(false);
-
-          // Redireciona para tela de fim de jogo passando a pontuação atual
           router.push({
             pathname: "/(home)/over",
             params: { score: String(score) },
           });
-
           return;
         }
 
-        // Caso o jogo continue, atualiza a peça atual e posição
         setCurrentPiece(newPiece);
         setCurrentPosition({ x: 3, y: 0 });
+        setCurrentRotation(0);
       }
     }, gameSpeed);
 
@@ -123,64 +161,62 @@ export default function GameScreen() {
     grid,
     isGameActive,
     isPaused,
-    gameSpeed,
     currentPiece,
-    score,
-    highScore,
-    router,
+    level,
+    linesClearedTotal,
   ]);
 
-  // Movimentos laterais
   const handleMoveHorizontal = (direction: "left" | "right") => {
     const newPosition =
       direction === "left"
         ? moveLeft(currentPosition)
         : moveRight(currentPosition);
-
     if (!checkCollision(grid, currentPiece.shape, newPosition)) {
       setCurrentPosition(newPosition);
     }
   };
 
-  // Rotação
   const handleRotate = () => {
     const { shape: newShape, rotation: newRotation } = rotatePiece(
       currentPiece,
       currentRotation
     );
+    const kicks = [-1, 1, -2, 2];
 
-    if (!checkCollision(grid, newShape, currentPosition)) {
-      setCurrentPiece({ ...currentPiece, shape: newShape });
-      setCurrentRotation(newRotation);
+    for (const kick of kicks) {
+      const tentativePosition = {
+        x: currentPosition.x + kick,
+        y: currentPosition.y,
+      };
+      if (!checkCollision(grid, newShape, tentativePosition)) {
+        setCurrentPiece({ ...currentPiece, shape: newShape });
+        setCurrentRotation(newRotation);
+        setCurrentPosition(tentativePosition);
+        return;
+      }
     }
   };
 
-  // Hard Drop
   const handleHardDrop = () => {
     const newPos = hardDrop(grid, currentPiece.shape, currentPosition);
     setCurrentPosition(newPos);
   };
 
-  // Soft Drop
   const handleSoftDrop = (active: boolean) => {
-    setGameSpeed(active ? 50 : 1000);
+    setGameSpeed(active ? 50 : Math.max(1000 - (level - 1) * 100, 100));
   };
 
   return (
     <View style={styles.container}>
-      {/* Info Superior */}
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>Pontuação: {score}</Text>
         <Text style={styles.infoText}>Recorde: {highScore}</Text>
       </View>
 
-      {/* Grid Principal */}
+      <LevelIndicator level={level} />
       <Grid grid={grid} blockSize={width / COLS} />
+      <NextPiecePreview piece={nextPiece} blockSize={20} />
 
-      {/* Preview da Próxima Peça */}
-      <NextPiecePreview piece={nextPiece} blockSize={20} currentRotation={0} />
-
-      {/* Controles */}
       <Controls
         onMoveLeft={() => handleMoveHorizontal("left")}
         onMoveRight={() => handleMoveHorizontal("right")}
@@ -189,7 +225,6 @@ export default function GameScreen() {
         onSoftDrop={handleSoftDrop}
       />
 
-      {/* Botão de Pausa */}
       <TouchableOpacity
         style={styles.pauseButton}
         onPress={() => setIsPaused(!isPaused)}

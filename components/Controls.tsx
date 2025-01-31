@@ -22,17 +22,14 @@ export default function Controls({
   onHardDrop,
   onSoftDrop,
 }: ControlsProps) {
-  // Gesto de arrastar (Pan)
   const panGesture = Gesture.Pan().onUpdate(
     (e: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
-      // Se moveu horizontalmente além de um limiar, decidir mover a peça
       if (Math.abs(e.translationX) > 30) {
         e.translationX > 0 ? onMoveRight() : onMoveLeft();
       }
     }
   );
 
-  // Gesto de Tap duplo para Hard Drop
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onStart(() => {
@@ -41,16 +38,11 @@ export default function Controls({
 
   return (
     <View style={styles.container}>
-      {/*
-        Área "invisível" para captura de gestos de arrastar e duplo clique
-      */}
       <GestureDetector gesture={Gesture.Race(panGesture, doubleTapGesture)}>
         <View style={styles.gestureArea} />
       </GestureDetector>
 
-      {/* Botões extras */}
       <View style={styles.buttonsContainer}>
-        {/* Soft Drop */}
         <TouchableOpacity
           style={styles.button}
           onPressIn={() => onSoftDrop(true)}
@@ -59,7 +51,6 @@ export default function Controls({
           <Text style={styles.buttonText}>↓</Text>
         </TouchableOpacity>
 
-        {/* Rotação */}
         <TouchableOpacity style={styles.button} onPress={onRotate}>
           <Text style={styles.buttonText}>↻</Text>
         </TouchableOpacity>
