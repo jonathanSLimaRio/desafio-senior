@@ -11,14 +11,14 @@ export default function HomeScreen() {
 
       <Pressable
         style={styles.button}
-        onPress={() => router.push(`/(home)/game`)}
+        onPress={() => router.push("/(home)/game")}
       >
         <Text style={styles.buttonText}>Iniciar Jogo</Text>
       </Pressable>
 
       <Pressable
         style={styles.button}
-        onPress={() => router.push(`/(home)/record`)}
+        onPress={() => router.push("/(home)/record")}
       >
         <Text style={styles.buttonText}>Ver Recordes</Text>
       </Pressable>

@@ -1,10 +1,10 @@
-import { Tetromino } from "@/app/utils/gameLogic";
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
+import { Tetromino } from "@/app/utils/gameLogic";
 
 interface Props {
   piece: Tetromino;
@@ -12,7 +12,11 @@ interface Props {
   currentRotation: number;
 }
 
-const NextPiecePreview = ({ piece, blockSize, currentRotation }: Props) => {
+export default function NextPiecePreview({
+  piece,
+  blockSize,
+  currentRotation,
+}: Props) {
   const AnimatedView = Animated.createAnimatedComponent(View);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -31,7 +35,7 @@ const NextPiecePreview = ({ piece, blockSize, currentRotation }: Props) => {
                 {
                   width: blockSize,
                   height: blockSize,
-                  backgroundColor: cell ? String(piece.color) : "transparent", // 🔹 Convertendo para string
+                  backgroundColor: cell ? piece.color : "transparent",
                 },
               ]}
             />
@@ -40,13 +44,14 @@ const NextPiecePreview = ({ piece, blockSize, currentRotation }: Props) => {
       ))}
     </AnimatedView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.3)",
     padding: 3,
+    marginTop: 10,
   },
   row: {
     flexDirection: "row",
@@ -56,5 +61,3 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.1)",
   },
 });
-
-export default NextPiecePreview;

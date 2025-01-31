@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import Animated from "react-native-reanimated";
 
 interface BlockProps {
   size: number;
@@ -7,15 +8,26 @@ interface BlockProps {
 }
 
 export const Block = ({ size, color }: BlockProps) => {
-  const styles = StyleSheet.create({
-    block: {
-      width: size,
-      height: size,
-      backgroundColor: color,
-      borderWidth: 1,
-      borderColor: '#333',
-    },
-  });
+  const AnimatedView = Animated.createAnimatedComponent(View);
 
-  return <View style={styles.block} />;
+  return (
+    <AnimatedView
+      style={[
+        styles.block,
+        {
+          width: size,
+          height: size,
+          backgroundColor: color,
+        },
+      ]}
+    />
+  );
 };
+
+const styles = StyleSheet.create({
+  block: {
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.2)",
+    borderRadius: 2,
+  },
+});

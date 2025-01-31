@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { loadHighScore, loadLastScore } from "../utils/storage";
+import { loadHighScore, loadLastScore } from "@/app/utils/storage";
 
 export default function RecordsScreen() {
   const [highScore, setHighScore] = useState(0);

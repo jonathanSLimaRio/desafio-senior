@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, Dimensions } from "react-native";
-import { Text, View } from "@/components/Themed";
+import { Text, View } from "react-native";
 import Grid from "@/components/grid/Grid";
 import {
   checkCollision,
@@ -15,12 +15,18 @@ import {
   clearLines,
   moveDown,
   calculateScore,
-} from "../utils/gameLogic";
+} from "@/app/utils/gameLogic";
 import Controls from "@/components/Controls";
-import { loadHighScore, saveHighScore, saveLastScore } from "../utils/storage";
+import {
+  loadHighScore,
+  saveHighScore,
+  saveLastScore,
+} from "@/app/utils/storage";
 import NextPiecePreview from "@/components/NextPiecePreview";
+import { useRouter } from "expo-router";
 
 export default function GameScreen() {
+  const router = useRouter();
   const { width } = Dimensions.get("window");
 
   const [isGameActive, setIsGameActive] = useState(true);
@@ -58,21 +64,25 @@ export default function GameScreen() {
     const gameInterval = setInterval(() => {
       const newPosition = moveDown(currentPosition);
 
+      // Tenta mover para baixo
       if (!checkCollision(grid, currentPiece.shape, newPosition)) {
         setCurrentPosition(newPosition);
       } else {
+        // Merge da peça no grid
         const mergedGrid = mergePieceToGrid(
           grid,
           currentPiece.shape,
           currentPosition,
-          currentPiece.color as any
+          currentPiece.color as string
         );
 
+        // Limpeza de linhas
         const { newGrid, linesCleared } = clearLines(mergedGrid);
 
         if (linesCleared > 0) {
           const newScore = score + calculateScore(linesCleared, 1);
           setScore(newScore);
+
           if (newScore > highScore) {
             setHighScore(newScore);
             saveHighScore(newScore);
@@ -82,16 +92,26 @@ export default function GameScreen() {
 
         setGrid(newGrid);
 
+        // Nova peça
         const keys = Object.keys(TETROMINOES);
         const newPiece =
           TETROMINOES[keys[Math.floor(Math.random() * keys.length)]];
 
+        // Verifica se a nova peça colide imediatamente (game over)
         if (checkCollision(newGrid, newPiece.shape, { x: 3, y: 0 })) {
           saveLastScore(score);
           setIsGameActive(false);
+
+          // Redireciona para tela de fim de jogo passando a pontuação atual
+          router.push({
+            pathname: "/(home)/over",
+            params: { score: String(score) },
+          });
+
           return;
         }
 
+        // Caso o jogo continue, atualiza a peça atual e posição
         setCurrentPiece(newPiece);
         setCurrentPosition({ x: 3, y: 0 });
       }
@@ -107,49 +127,69 @@ export default function GameScreen() {
     currentPiece,
     score,
     highScore,
+    router,
   ]);
 
+  // Movimentos laterais
   const handleMoveHorizontal = (direction: "left" | "right") => {
     const newPosition =
       direction === "left"
         ? moveLeft(currentPosition)
         : moveRight(currentPosition);
+
     if (!checkCollision(grid, currentPiece.shape, newPosition)) {
       setCurrentPosition(newPosition);
     }
   };
 
+  // Rotação
   const handleRotate = () => {
     const { shape: newShape, rotation: newRotation } = rotatePiece(
       currentPiece,
       currentRotation
     );
+
     if (!checkCollision(grid, newShape, currentPosition)) {
       setCurrentPiece({ ...currentPiece, shape: newShape });
       setCurrentRotation(newRotation);
     }
   };
 
+  // Hard Drop
+  const handleHardDrop = () => {
+    const newPos = hardDrop(grid, currentPiece.shape, currentPosition);
+    setCurrentPosition(newPos);
+  };
+
+  // Soft Drop
+  const handleSoftDrop = (active: boolean) => {
+    setGameSpeed(active ? 50 : 1000);
+  };
+
   return (
     <View style={styles.container}>
+      {/* Info Superior */}
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>Pontuação: {score}</Text>
         <Text style={styles.infoText}>Recorde: {highScore}</Text>
       </View>
+
+      {/* Grid Principal */}
       <Grid grid={grid} blockSize={width / COLS} />
+
+      {/* Preview da Próxima Peça */}
       <NextPiecePreview piece={nextPiece} blockSize={20} currentRotation={0} />
+
+      {/* Controles */}
       <Controls
         onMoveLeft={() => handleMoveHorizontal("left")}
         onMoveRight={() => handleMoveHorizontal("right")}
         onRotate={handleRotate}
-        onHardDrop={() => {
-          const newPos = hardDrop(grid, currentPiece.shape, currentPosition);
-          setCurrentPosition(newPos);
-        }}
-        onSoftDrop={(active) => {
-          setGameSpeed(active ? 50 : 1000);
-        }}
+        onHardDrop={handleHardDrop}
+        onSoftDrop={handleSoftDrop}
       />
+
+      {/* Botão de Pausa */}
       <TouchableOpacity
         style={styles.pauseButton}
         onPress={() => setIsPaused(!isPaused)}
@@ -163,19 +203,9 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: "#222",
-  },
-  pauseButton: {
-    position: "absolute",
-    top: 40,
-    right: 20,
-    padding: 10,
-  },
-  pauseText: {
-    fontSize: 28,
-    color: "white",
+    alignItems: "center",
+    justifyContent: "center",
   },
   infoContainer: {
     position: "absolute",
@@ -188,5 +218,15 @@ const styles = StyleSheet.create({
   infoText: {
     color: "white",
     fontSize: 16,
+  },
+  pauseButton: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    padding: 10,
+  },
+  pauseText: {
+    fontSize: 28,
+    color: "white",
   },
 });
