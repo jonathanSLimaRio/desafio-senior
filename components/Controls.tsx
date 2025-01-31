@@ -1,11 +1,5 @@
-import React from "react";
+import React, { useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
-import {
-  Gesture,
-  GestureDetector,
-  GestureUpdateEvent,
-  PanGestureHandlerEventPayload,
-} from "react-native-gesture-handler";
 
 interface ControlsProps {
   onMoveLeft: () => void;
@@ -22,27 +16,58 @@ export default function Controls({
   onHardDrop,
   onSoftDrop,
 }: ControlsProps) {
-  const panGesture = Gesture.Pan().onUpdate(
-    (e: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
-      if (Math.abs(e.translationX) > 30) {
-        e.translationX > 0 ? onMoveRight() : onMoveLeft();
-      }
-    }
-  );
+  const moveLeftInterval = useRef<NodeJS.Timeout | null>(null);
+  const moveRightInterval = useRef<NodeJS.Timeout | null>(null);
 
-  const doubleTapGesture = Gesture.Tap()
-    .numberOfTaps(2)
-    .onStart(() => {
-      onHardDrop();
-    });
+  const handleLeftPressIn = () => {
+    onMoveLeft();
+    moveLeftInterval.current = setInterval(() => {
+      onMoveLeft();
+    }, 150);
+  };
+
+  const handleLeftPressOut = () => {
+    if (moveLeftInterval.current) {
+      clearInterval(moveLeftInterval.current);
+      moveLeftInterval.current = null;
+    }
+  };
+
+  const handleRightPressIn = () => {
+    onMoveRight(); // move imediatamente
+    moveRightInterval.current = setInterval(() => {
+      onMoveRight();
+    }, 150);
+  };
+
+  const handleRightPressOut = () => {
+    if (moveRightInterval.current) {
+      clearInterval(moveRightInterval.current);
+      moveRightInterval.current = null;
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <GestureDetector gesture={Gesture.Race(panGesture, doubleTapGesture)}>
-        <View style={styles.gestureArea} />
-      </GestureDetector>
+      <View style={styles.row}>
+        <TouchableOpacity
+          style={styles.button}
+          onPressIn={handleLeftPressIn}
+          onPressOut={handleLeftPressOut}
+        >
+          <Text style={styles.buttonText}>←</Text>
+        </TouchableOpacity>
 
-      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={styles.button}
+          onPressIn={handleRightPressIn}
+          onPressOut={handleRightPressOut}
+        >
+          <Text style={styles.buttonText}>→</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.row}>
         <TouchableOpacity
           style={styles.button}
           onPressIn={() => onSoftDrop(true)}
@@ -55,6 +80,12 @@ export default function Controls({
           <Text style={styles.buttonText}>↻</Text>
         </TouchableOpacity>
       </View>
+
+      <View style={styles.row}>
+        <TouchableOpacity style={styles.button} onPress={onHardDrop}>
+          <Text style={styles.buttonText}>Hard Drop</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -64,26 +95,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 30,
     width: "100%",
+    alignItems: "center",
   },
-  gestureArea: {
-    position: "absolute",
-    top: -200,
-    left: 0,
-    right: 0,
-    height: 200,
-  },
-  buttonsContainer: {
+  row: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 20,
+    marginBottom: 10,
   },
   button: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
     padding: 20,
-    borderRadius: 40,
-    width: 60,
-    height: 60,
-    justifyContent: "center",
+    borderRadius: 8,
+    marginHorizontal: 10,
+    minWidth: 60,
     alignItems: "center",
   },
   buttonText: {

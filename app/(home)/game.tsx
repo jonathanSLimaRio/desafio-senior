@@ -7,7 +7,6 @@ import {
   hardDrop,
   moveLeft,
   moveRight,
-  rotatePiece,
   TETROMINOES,
   COLS,
   ROWS,
@@ -15,6 +14,8 @@ import {
   clearLines,
   moveDown,
   calculateScore,
+  getRotatedShape,
+  applySRS,
 } from "@/app/utils/gameLogic";
 import Controls from "@/components/Controls";
 import {
@@ -44,11 +45,43 @@ export default function GameScreen() {
   );
 
   const [nextPiece, setNextPiece] = useState(TETROMINOES.J);
+
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [linesClearedTotal, setLinesClearedTotal] = useState(0);
+
   const [gameSpeed, setGameSpeed] = useState(1000);
+
+  function getVisibleGrid(
+    baseGrid: (number | string)[][],
+    shape: number[][],
+    pos: { x: number; y: number },
+    color: string
+  ) {
+    const displayGrid = baseGrid.map((row) => [...row]);
+
+    for (let y = 0; y < shape.length; y++) {
+      for (let x = 0; x < shape[y].length; x++) {
+        if (shape[y][x]) {
+          const gridY = pos.y + y;
+          const gridX = pos.x + x;
+
+          if (gridY >= 0 && gridY < ROWS && gridX >= 0 && gridX < COLS) {
+            displayGrid[gridY][gridX] = color;
+          }
+        }
+      }
+    }
+    return displayGrid;
+  }
+
+  const displayGrid = getVisibleGrid(
+    grid,
+    currentPiece.shape,
+    currentPosition,
+    currentPiece.color
+  );
 
   useFocusEffect(
     React.useCallback(() => {
@@ -88,7 +121,7 @@ export default function GameScreen() {
   }, []);
 
   useEffect(() => {
-    const newSpeed = Math.max(1000 - (level - 1) * 100, 100);
+    const newSpeed = Math.max(1000 - 80 * (level - 1), 50);
     setGameSpeed(newSpeed);
   }, [level]);
 
@@ -111,7 +144,6 @@ export default function GameScreen() {
         const { newGrid, linesCleared } = clearLines(mergedGrid);
 
         if (linesCleared > 0) {
-          // playClearSound();
           const newScore = score + calculateScore(linesCleared, level);
           setScore(newScore);
 
@@ -138,7 +170,6 @@ export default function GameScreen() {
         setNextPiece(newNextPiece);
 
         if (checkCollision(newGrid, newPiece.shape, { x: 3, y: 0 })) {
-          // playGameOverSound();
           saveLastScore(score);
           setIsGameActive(false);
           router.push({
@@ -163,6 +194,11 @@ export default function GameScreen() {
     currentPiece,
     level,
     linesClearedTotal,
+    gameSpeed,
+    score,
+    nextPiece,
+    highScore,
+    router,
   ]);
 
   const handleMoveHorizontal = (direction: "left" | "right") => {
@@ -170,29 +206,31 @@ export default function GameScreen() {
       direction === "left"
         ? moveLeft(currentPosition)
         : moveRight(currentPosition);
+
     if (!checkCollision(grid, currentPiece.shape, newPosition)) {
       setCurrentPosition(newPosition);
     }
   };
 
   const handleRotate = () => {
-    const { shape: newShape, rotation: newRotation } = rotatePiece(
+    const { newShape, newRotation } = getRotatedShape(
       currentPiece,
       currentRotation
     );
-    const kicks = [-1, 1, -2, 2];
 
-    for (const kick of kicks) {
-      const tentativePosition = {
-        x: currentPosition.x + kick,
-        y: currentPosition.y,
-      };
-      if (!checkCollision(grid, newShape, tentativePosition)) {
-        setCurrentPiece({ ...currentPiece, shape: newShape });
-        setCurrentRotation(newRotation);
-        setCurrentPosition(tentativePosition);
-        return;
-      }
+    const { finalPos, success } = applySRS(
+      grid,
+      currentPiece,
+      currentRotation as 0 | 1 | 2 | 3,
+      newRotation as 0 | 1 | 2 | 3,
+      currentPosition,
+      newShape
+    );
+
+    if (success) {
+      setCurrentPiece({ ...currentPiece, shape: newShape });
+      setCurrentRotation(newRotation);
+      setCurrentPosition(finalPos);
     }
   };
 
@@ -213,7 +251,9 @@ export default function GameScreen() {
       </View>
 
       <LevelIndicator level={level} />
-      <Grid grid={grid} blockSize={width / COLS} />
+
+      <Grid grid={displayGrid} blockSize={width / COLS} />
+
       <NextPiecePreview piece={nextPiece} blockSize={20} />
 
       <Controls
